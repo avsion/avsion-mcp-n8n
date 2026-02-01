@@ -1,12 +1,17 @@
+#!/usr/bin/env node
+
 /**
  * avn-mcp-n8n - MCP Server for n8n Workflow Integration
  *
  * This server provides read-only access to n8n workflows for
  * troubleshooting, analysis, and optimization using AI assistants.
+ *
+ * Usage: node src/index.js
  */
 
-import { MCPServer } from './server.js';
 import dotenv from 'dotenv';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { createMCPServer } from './server.js';
 
 // Load environment variables
 dotenv.config();
@@ -18,46 +23,26 @@ const missing = requiredEnvVars.filter((key) => !process.env[key]);
 if (missing.length > 0) {
   console.error(`❌ Missing required environment variables: ${missing.join(', ')}`);
   console.error('Please configure your .env file with the required values.');
+  console.error('\nRequired:');
+  console.error('  N8N_API_URL    - Your n8n instance URL (e.g., https://n8n.example.com)');
+  console.error('  N8N_API_KEY    - Your n8n API key from Settings → API');
   process.exit(1);
 }
 
-// Initialize and start the MCP server
+/**
+ * Main entry point - starts the MCP server with STDIO transport
+ */
 async function main() {
-  try {
-    console.log('🚀 Starting avn-mcp-n8n MCP Server...');
-    console.log(`📡 n8n API URL: ${process.env.N8N_API_URL}`);
+  const server = createMCPServer();
+  const transport = new StdioServerTransport();
 
-    const server = new MCPServer();
+  await server.connect(transport);
 
-    console.log(`✅ MCP Server initialized with ${server.tools.length} tools:`);
-    server.tools.forEach((tool) => {
-      console.log(`   - ${tool.name}`);
-    });
-
-    console.log('\n📚 Available tools:');
-    console.log('   n8n_list_workflows      - List all workflows');
-    console.log('   n8n_get_workflow        - Get workflow details');
-    console.log('   n8n_get_executions      - Get execution history');
-    console.log('   n8n_validate_workflow   - Validate workflow configuration');
-    console.log('   n8n_analyze_workflow    - Analyze workflow for issues');
-
-    console.log('\n✨ Server ready to handle MCP requests');
-    console.log('ℹ️  Press Ctrl+C to stop\n');
-
-    // Keep the process running
-    process.on('SIGINT', () => {
-      console.log('\n👋 Shutting down gracefully...');
-      process.exit(0);
-    });
-
-  } catch (error) {
-    console.error('❌ Failed to start MCP server:', error.message);
-    process.exit(1);
-  }
+  // Server is now running, listening for MCP messages via STDIO
+  // Error handling is managed by the MCP SDK
 }
 
-// Start the server
-main();
-
-export { MCPServer } from './server.js';
-export { N8nMCPClient } from './client.js';
+main().catch((error) => {
+  console.error('Fatal error starting MCP server:', error);
+  process.exit(1);
+});

@@ -3,10 +3,6 @@
  * Provides read-only access to n8n workflows for troubleshooting and analysis
  */
 
-import dotenv from 'dotenv';
-
-dotenv.config();
-
 export class N8nMCPClient {
   constructor(config = {}) {
     this.apiUrl = config.apiUrl || process.env.N8N_API_URL;
@@ -140,6 +136,38 @@ export class N8nMCPClient {
       };
     } catch (error) {
       throw new Error(`Failed to validate workflow: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get workflow statistics
+   * @param {string} workflowId - The workflow ID
+   * @returns {Promise<Object>} Workflow statistics
+   */
+  async getWorkflowStats(workflowId) {
+    try {
+      const workflow = await this.getWorkflow(workflowId);
+      const executions = await this.getWorkflowExecutions(workflowId, 100);
+
+      const successful = executions.filter((e) => e.finished && !e.stoppedAt && !e.error).length;
+      const failed = executions.filter((e) => e.error).length;
+      const times = executions
+        .filter((e) => e.finishedAt && e.startedAt)
+        .map((e) => new Date(e.finishedAt) - new Date(e.startedAt));
+
+      return {
+        workflowId,
+        name: workflow.name,
+        active: workflow.active,
+        nodeCount: workflow.nodes?.length || 0,
+        totalExecutions: executions.length,
+        successfulExecutions: successful,
+        failedExecutions: failed,
+        successRate: executions.length > 0 ? ((successful / executions.length) * 100).toFixed(2) + '%' : 'N/A',
+        avgExecutionTime: times.length > 0 ? (times.reduce((a, b) => a + b, 0) / times.length / 1000).toFixed(2) + 's' : 'N/A',
+      };
+    } catch (error) {
+      throw new Error(`Failed to get workflow stats: ${error.message}`);
     }
   }
 }

@@ -1,55 +1,164 @@
 /**
- * MCP Server for n8n
- * Provides Model Context Protocol tools for n8n workflow interaction
+ * n8n MCP Server
+ * Model Context Protocol server for n8n workflow interaction
  */
 
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+  ErrorCode,
+  McpError,
+} from '@modelcontextprotocol/sdk/types.js';
 import { N8nMCPClient } from './client.js';
 
-export class MCPServer {
-  constructor() {
-    this.client = new N8nMCPClient();
-    this.tools = this.registerTools();
-  }
+/**
+ * Create and configure the MCP server with n8n tools
+ */
+export function createMCPServer() {
+  const client = new N8nMCPClient();
+
+  const server = new Server(
+    {
+      name: 'avn-mcp-n8n',
+      version: '1.0.0',
+    },
+    {
+      capabilities: {
+        tools: {},
+      },
+    }
+  );
 
   /**
-   * Register available MCP tools
+   * List available tools
    */
-  registerTools() {
-    return [
-      {
-        name: 'n8n_list_workflows',
-        description: 'List all n8n workflows with read-only access',
-        inputSchema: {
-          type: 'object',
-          properties: {},
+  server.setRequestHandler(ListToolsRequestSchema, async () => {
+    return {
+      tools: [
+        {
+          name: 'n8n_list_workflows',
+          description: 'List all n8n workflows in your instance. Returns workflow IDs, names, and active status.',
+          inputSchema: {
+            type: 'object',
+            properties: {},
+          },
         },
-        handler: async () => {
-          const workflows = await this.client.listWorkflows();
+        {
+          name: 'n8n_get_workflow',
+          description: 'Get detailed information about a specific workflow including nodes, connections, and settings.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              workflowId: {
+                type: 'string',
+                description: 'The ID of the workflow to retrieve',
+              },
+            },
+            required: ['workflowId'],
+          },
+        },
+        {
+          name: 'n8n_get_workflow_stats',
+          description: 'Get statistics for a workflow including execution counts, success rate, and average execution time.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              workflowId: {
+                type: 'string',
+                description: 'The ID of the workflow',
+              },
+            },
+            required: ['workflowId'],
+          },
+        },
+        {
+          name: 'n8n_get_executions',
+          description: 'Get recent execution history for a workflow. Useful for troubleshooting failed runs.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              workflowId: {
+                type: 'string',
+                description: 'The ID of the workflow',
+              },
+              limit: {
+                type: 'number',
+                description: 'Number of executions to return (default: 10, max: 100)',
+                default: 10,
+              },
+            },
+            required: ['workflowId'],
+          },
+        },
+        {
+          name: 'n8n_validate_workflow',
+          description: 'Validate a workflow configuration for common issues like unconnected nodes or missing required parameters.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              workflowId: {
+                type: 'string',
+                description: 'The ID of the workflow to validate',
+              },
+            },
+            required: ['workflowId'],
+          },
+        },
+        {
+          name: 'n8n_search_workflows',
+          description: 'Search for workflows by name. Useful for finding specific workflows without knowing their IDs.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              query: {
+                type: 'string',
+                description: 'Search query to match against workflow names',
+              },
+            },
+            required: ['query'],
+          },
+        },
+      ],
+    };
+  });
+
+  /**
+   * Handle tool calls
+   */
+  server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    const { name, arguments: args } = request.params;
+
+    try {
+      switch (name) {
+        case 'n8n_list_workflows': {
+          const workflows = await client.listWorkflows();
           return {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify(workflows, null, 2),
+                text: JSON.stringify(
+                  {
+                    count: workflows.length,
+                    workflows: workflows.map((w) => ({
+                      id: w.id,
+                      name: w.name,
+                      active: w.active,
+                      updatedAt: w.updatedAt,
+                    })),
+                  },
+                  null,
+                  2
+                ),
               },
             ],
           };
-        },
-      },
-      {
-        name: 'n8n_get_workflow',
-        description: 'Get details of a specific n8n workflow by ID',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            workflowId: {
-              type: 'string',
-              description: 'The ID of the workflow to retrieve',
-            },
-          },
-          required: ['workflowId'],
-        },
-        handler: async (params) => {
-          const workflow = await this.client.getWorkflow(params.workflowId);
+        }
+
+        case 'n8n_get_workflow': {
+          const { workflowId } = args;
+          const workflow = await client.getWorkflow(workflowId);
           return {
             content: [
               {
@@ -58,55 +167,52 @@ export class MCPServer {
               },
             ],
           };
-        },
-      },
-      {
-        name: 'n8n_get_executions',
-        description: 'Get execution history for a specific workflow',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            workflowId: {
-              type: 'string',
-              description: 'The ID of the workflow',
-            },
-            limit: {
-              type: 'number',
-              description: 'Number of executions to return (default: 10)',
-            },
-          },
-          required: ['workflowId'],
-        },
-        handler: async (params) => {
-          const executions = await this.client.getWorkflowExecutions(
-            params.workflowId,
-            params.limit || 10
-          );
+        }
+
+        case 'n8n_get_workflow_stats': {
+          const { workflowId } = args;
+          const stats = await client.getWorkflowStats(workflowId);
           return {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify(executions, null, 2),
+                text: JSON.stringify(stats, null, 2),
               },
             ],
           };
-        },
-      },
-      {
-        name: 'n8n_validate_workflow',
-        description: 'Validate a workflow configuration for common issues',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            workflowId: {
-              type: 'string',
-              description: 'The ID of the workflow to validate',
-            },
-          },
-          required: ['workflowId'],
-        },
-        handler: async (params) => {
-          const validation = await this.client.validateWorkflow(params.workflowId);
+        }
+
+        case 'n8n_get_executions': {
+          const { workflowId, limit = 10 } = args;
+          const executions = await client.getWorkflowExecutions(workflowId, Math.min(limit, 100));
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(
+                  {
+                    count: executions.length,
+                    workflowId,
+                    executions: executions.map((e) => ({
+                      id: e.id,
+                      finished: e.finished,
+                      mode: e.mode,
+                      startedAt: e.startedAt,
+                      finishedAt: e.finishedAt,
+                      error: e.error ? { message: e.error.message, type: e.error.name } : null,
+                    })),
+                  },
+                  null,
+                  2
+                ),
+              },
+            ],
+          };
+        }
+
+        case 'n8n_validate_workflow': {
+          const { workflowId } = args;
+          const validation = await client.validateWorkflow(workflowId);
           return {
             content: [
               {
@@ -115,104 +221,46 @@ export class MCPServer {
               },
             ],
           };
-        },
-      },
-      {
-        name: 'n8n_analyze_workflow',
-        description: 'Analyze a workflow for troubleshooting and optimization suggestions',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            workflowId: {
-              type: 'string',
-              description: 'The ID of the workflow to analyze',
-            },
-          },
-          required: ['workflowId'],
-        },
-        handler: async (params) => {
-          const workflow = await this.client.getWorkflow(params.workflowId);
-          const executions = await this.client.getWorkflowExecutions(params.workflowId, 50);
+        }
 
-          const analysis = {
-            workflowId: params.workflowId,
-            name: workflow.name,
-            nodeCount: workflow.nodes?.length || 0,
-            connectionCount: Object.keys(workflow.connections || {}).length,
-            recentExecutions: executions.length,
-            successRate: this.calculateSuccessRate(executions),
-            avgExecutionTime: this.calculateAvgExecutionTime(executions),
-            suggestions: this.generateSuggestions(workflow, executions),
-          };
-
+        case 'n8n_search_workflows': {
+          const { query } = args;
+          const workflows = await client.listWorkflows();
+          const filtered = workflows.filter(
+            (w) => w.name && w.name.toLowerCase().includes(query.toLowerCase())
+          );
           return {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify(analysis, null, 2),
+                text: JSON.stringify(
+                  {
+                    query,
+                    count: filtered.length,
+                    workflows: filtered.map((w) => ({
+                      id: w.id,
+                      name: w.name,
+                      active: w.active,
+                      updatedAt: w.updatedAt,
+                    })),
+                  },
+                  null,
+                  2
+                ),
               },
             ],
           };
-        },
-      },
-    ];
-  }
+        }
 
-  /**
-   * Calculate success rate from executions
-   */
-  calculateSuccessRate(executions) {
-    if (!executions || executions.length === 0) return null;
-    const successful = executions.filter((e) => e.finished && !e.stoppedAt && !e.error).length;
-    return ((successful / executions.length) * 100).toFixed(2) + '%';
-  }
-
-  /**
-   * Calculate average execution time
-   */
-  calculateAvgExecutionTime(executions) {
-    if (!executions || executions.length === 0) return null;
-    const times = executions
-      .filter((e) => e.finished && e.startedAt)
-      .map((e) => new Date(e.finishedAt) - new Date(e.startedAt));
-    if (times.length === 0) return null;
-    return (times.reduce((a, b) => a + b, 0) / times.length / 1000).toFixed(2) + 's';
-  }
-
-  /**
-   * Generate optimization suggestions
-   */
-  generateSuggestions(workflow, executions) {
-    const suggestions = [];
-
-    // Check for performance issues
-    const avgTime = this.calculateAvgExecutionTime(executions);
-    if (avgTime && parseFloat(avgTime) > 30) {
-      suggestions.push({
-        type: 'performance',
-        message: 'Average execution time exceeds 30 seconds. Consider optimizing node configurations.',
-      });
+        default:
+          throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
+      }
+    } catch (error) {
+      throw new McpError(ErrorCode.InternalError, `Error executing tool ${name}: ${error.message}`);
     }
+  });
 
-    // Check for error patterns
-    const recentErrors = executions.filter((e) => e.error).slice(0, 5);
-    if (recentErrors.length > 0) {
-      suggestions.push({
-        type: 'reliability',
-        message: `Recent errors detected: ${recentErrors.length} in last executions. Check error logs.`,
-      });
-    }
-
-    // Check for complex workflows
-    if (workflow.nodes && workflow.nodes.length > 20) {
-      suggestions.push({
-        type: 'maintainability',
-        message: 'Workflow has many nodes. Consider breaking into sub-workflows for better maintainability.',
-      });
-    }
-
-    return suggestions;
-  }
+  return server;
 }
 
-export default MCPServer;
+export default createMCPServer;

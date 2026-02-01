@@ -4,15 +4,19 @@
   "description": "MCP server enabling Claude Code to safely access and troubleshoot self-hosted n8n workflows via read-only tools.",
   "main": "src/index.js",
   "type": "module",
+  "bin": {
+    "avn-mcp-n8n": "src/index.js"
+  },
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test test/**/*.test.js",
     "lint": "eslint src/",
     "format": "prettier --write \"src/**/*.js\""
   },
   "keywords": [
     "mcp",
+    "model-context-protocol",
     "n8n",
     "workflow",
     "automation",
@@ -33,7 +37,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.32.0",
+    "@modelcontextprotocol/sdk": "^1.0.4",
     "dotenv": "^16.4.0"
   },
   "devDependencies": {
