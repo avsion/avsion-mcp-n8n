@@ -1,0 +1,43 @@
+{
+  "name": "avn-mcp-n8n",
+  "version": "1.0.0",
+  "description": "MCP server enabling Claude Code to safely access and troubleshoot self-hosted n8n workflows via read-only tools.",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint src/",
+    "format": "prettier --write \"src/**/*.js\""
+  },
+  "keywords": [
+    "mcp",
+    "n8n",
+    "workflow",
+    "automation",
+    "anthropic",
+    "claude"
+  ],
+  "author": "avsion",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/avsion/avsion-mcp-n8n.git"
+  },
+  "bugs": {
+    "url": "https://github.com/avsion/avsion-mcp-n8n/issues"
+  },
+  "homepage": "https://github.com/avsion/avsion-mcp-n8n#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.0",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "prettier": "^3.3.0"
+  }
+}
