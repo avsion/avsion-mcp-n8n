@@ -59,5 +59,5 @@ async function main() {
 // Start the server
 main();
 
-export { MCPServer, N8nMCPClient } from './server.js';
+export { MCPServer } from './server.js';
 export { N8nMCPClient } from './client.js';
