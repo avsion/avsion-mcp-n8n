@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "n8n": {
+      "command": "node",
+      "args": ["src/index.js"],
+      "cwd": "/Users/yariv/Documents/agentic_workflows/projects/AI_Personal_Assistant_Core"
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"]
+    },
+    "fetch": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-fetch"]
+    }
+  }
+}
