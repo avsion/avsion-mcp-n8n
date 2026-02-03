@@ -32,10 +32,6 @@
     "git": {
       "command": "uvx",
       "args": ["mcp-server-git", "--repository", "/path/to/your/project"]
-    },
-    "brave-search": {
-      "command": "uvx",
-      "args": ["mcp-server-brave-search"]
     }
   }
 }
