@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "n8n": {
+      "command": "node",
+      "args": ["src/index.js"],
+      "cwd": "/path/to/your/project",
+      "env": {
+        "N8N_API_URL": "https://your-n8n-instance.com",
+        "N8N_API_KEY": "your-n8n-api-key-here"
+      }
+    }
+  }
+}

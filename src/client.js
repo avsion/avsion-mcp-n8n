@@ -5,9 +5,18 @@
 
 export class N8nMCPClient {
   constructor(config = {}) {
-    this.apiUrl = config.apiUrl || process.env.N8N_API_URL;
+    // Ensure API URL doesn't end with /api/v1 - we'll add it dynamically
+    let apiUrl = config.apiUrl || process.env.N8N_API_URL || '';
+    this.apiBaseUrl = apiUrl.replace(/\/api\/v1\/?$/, '');
     this.apiKey = config.apiKey || process.env.N8N_API_KEY;
     this.timeout = config.timeout || parseInt(process.env.API_TIMEOUT_MS) || 30000;
+  }
+
+  /**
+   * Get full API URL with path
+   */
+  _apiUrl(path) {
+    return `${this.apiBaseUrl}/api/v1${path}`;
   }
 
   /**
@@ -16,10 +25,10 @@ export class N8nMCPClient {
    */
   async listWorkflows() {
     try {
-      const response = await fetch(`${this.apiUrl}/api/v1/workflows`, {
+      const response = await fetch(this._apiUrl('/workflows'), {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          'X-N8N-API-KEY': this.apiKey,
           'Content-Type': 'application/json',
         },
         signal: AbortSignal.timeout(this.timeout),
@@ -43,10 +52,10 @@ export class N8nMCPClient {
    */
   async getWorkflow(workflowId) {
     try {
-      const response = await fetch(`${this.apiUrl}/api/v1/workflows/${workflowId}`, {
+      const response = await fetch(this._apiUrl(`/workflows/${workflowId}`), {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          'X-N8N-API-KEY': this.apiKey,
           'Content-Type': 'application/json',
         },
         signal: AbortSignal.timeout(this.timeout),
@@ -72,11 +81,11 @@ export class N8nMCPClient {
   async getWorkflowExecutions(workflowId, limit = 10) {
     try {
       const response = await fetch(
-        `${this.apiUrl}/api/v1/executions?workflowId=${workflowId}&limit=${limit}`,
+        this._apiUrl(`/executions?workflowId=${workflowId}&limit=${limit}`),
         {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
+            'X-N8N-API-KEY': this.apiKey,
             'Content-Type': 'application/json',
           },
           signal: AbortSignal.timeout(this.timeout),
@@ -113,18 +122,33 @@ export class N8nMCPClient {
 
       // Check for unconnected nodes
       const connectedNodes = new Set();
-      workflow.connections?.forEach((conn) => {
-        conn.forEach((c) => {
-          c.forEach((connection) => {
-            connectedNodes.add(connection.node);
-            connectedNodes.add(connection.index);
+      const sourceNodes = new Set();
+
+      // connections is an object: {nodeName: {connectionType: [[{node, type, index}]]}}
+      Object.entries(workflow.connections || {}).forEach(([sourceName, connTypes]) => {
+        sourceNodes.add(sourceName);
+        Object.values(connTypes).forEach((connectionsArray) => {
+          connectionsArray.forEach((connections) => {
+            connections.forEach((connection) => {
+              connectedNodes.add(connection.node);
+            });
           });
         });
       });
 
+      // Check for nodes with no connections (sources or destinations)
       workflow.nodes?.forEach((node) => {
-        if (!connectedNodes.has(node.name)) {
-          warnings.push(`Node "${node.name}" may be unconnected`);
+        const hasOutgoing = sourceNodes.has(node.name);
+        const hasIncoming = connectedNodes.has(node.name);
+        // Trigger nodes don't need incoming connections
+        const isTrigger = node.type?.includes('Trigger') || node.type?.includes('trigger');
+
+        if (!hasOutgoing && !hasIncoming) {
+          warnings.push(`Node "${node.name}" has no connections`);
+        } else if (!hasOutgoing && !isTrigger && hasIncoming) {
+          warnings.push(`Node "${node.name}" has no outgoing connections`);
+        } else if (!hasIncoming && !isTrigger && hasOutgoing) {
+          // This might be intentional for some nodes
         }
       });
 

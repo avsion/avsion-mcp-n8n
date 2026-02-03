@@ -144,3 +144,7 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# MCP configuration (contains sensitive API keys)
+mcp.json
+!mcp.json.example
