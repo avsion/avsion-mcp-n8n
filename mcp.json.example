@@ -8,6 +8,34 @@
         "N8N_API_URL": "https://your-n8n-instance.com",
         "N8N_API_KEY": "your-n8n-api-key-here"
       }
+    },
+    "github": {
+      "command": "node",
+      "args": ["src/github-server.js"],
+      "cwd": "/path/to/your/project",
+      "env": {
+        "GITHUB_TOKEN": "your-github-pat-token-here"
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/your/project"]
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"]
+    },
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"]
+    },
+    "git": {
+      "command": "uvx",
+      "args": ["mcp-server-git", "--repository", "/path/to/your/project"]
+    },
+    "brave-search": {
+      "command": "uvx",
+      "args": ["mcp-server-brave-search"]
     }
   }
 }
