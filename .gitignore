@@ -147,6 +147,7 @@ Thumbs.db
 !.vscode/mcp.json.example
 
 # MCP configuration (contains sensitive API keys)
+.mcp.json
 mcp.json
 .claude/mcp.json
 .vscode/mcp.json
