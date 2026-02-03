@@ -134,8 +134,9 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-# Claude Code settings (optional, remove if you want to track them)
-.claude/settings.local.json
+# Claude Code settings (contains sensitive API keys)
+.claude/
+!.claude/settings.local.json.example
 
 # OS files
 .DS_Store
