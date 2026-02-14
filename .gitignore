@@ -1,0 +1,10 @@
+# Claude Code - sensitive local settings
+.claude/settings.local.json
+.claude/env.json
+
+# Keep the directory structure but ignore sensitive files
+.claude/*
+
+# But allow keeping example/template files
+!.claude/settings.local.json.example
+!.claude/settings.example.json
