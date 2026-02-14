@@ -1,28 +1,25 @@
 # AI Personal Assistant Core (n8n Integrated)
 
-This repository contains the core logic and configuration for an AI Assistant integrated with n8n agentic workflows.
+This repository serves as the central logic hub for an AI Assistant integrated with **n8n** agentic workflows. It manages context, MCP server connections, and secure configuration.
 
-## 🛠 Developer Setup
-To protect sensitive data, this project uses local configuration files that are ignored by Git.
+## 🛠 Project Structure
+* `.claudecode/`: Local Claude settings and MCP configurations.
+* `.gitignore`: Ensures private API tokens and env files stay local.
+* `*.example`: Templates for setting up the environment on new machines.
 
-### 1. API Configuration
-1. Copy `.claude/settings.local.json.example` to `.claude/settings.local.json`.
-2. Add your `ANTHROPIC_AUTH_TOKEN` and any n8n/MCP server keys to the new file.
+## 🔐 Security & Maintenance
+We use a custom redaction system to prevent API key leaks.
 
-### 2. Custom Status Bar
-The project includes a custom Claude Code status bar located at `~/.claude/scripts/statusline.sh`. It displays:
-* Active AI Model
-* Token Usage %
-* Current Git Branch
-* Latest Commit Message
+### The `cb` Command
+To backup your latest statusline logic and settings safely, use the terminal alias:
+`cb`
+This runs `safe_backup.sh`, which strips your `ANTHROPIC_AUTH_TOKEN` before saving to `~/Documents/Claude_Backup`.
 
-## 💾 Maintenance & Backups
-We use a **Safe Backup** system to sync settings while redacting private keys.
+## 📊 Developer Experience
+The environment is enhanced with a custom **Claude Code Status Line**:
+* **Real-time Stats**: Model name, token window usage, and project name.
+* **Git Context**: Displays the current branch and last commit subject.
 
-**To backup your configuration:**
-Type `cb` in your terminal (using the alias in your `~/.zshrc`).
-* **Source Script:** `~/Documents/Claude_Backup/safe_backup.sh`
-* **Outputs:** Redacted JSON files in the backup folder.
-
-## 🚀 n8n Integration
-(Add details here about your specific n8n workflows and how the AI interacts with them.)
+## 🕸 n8n & MCP Integration
+This assistant is designed to connect to n8n via MCP servers. 
+*Configure your n8n nodes in `.claudecode/settings.json` under the `mcpServers` block.*
