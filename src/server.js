@@ -8,6 +8,8 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
   ErrorCode,
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
@@ -27,9 +29,82 @@ export function createMCPServer() {
     {
       capabilities: {
         tools: {},
+        resources: {},
       },
     }
   );
+
+  /**
+   * List available resources
+   */
+  server.setRequestHandler(ListResourcesRequestSchema, async () => {
+    return {
+      resources: [
+        {
+          uri: 'status://n8n',
+          name: 'n8n Connection Status',
+          description: 'Current connection status to n8n instance',
+          mimeType: 'application/json',
+        },
+      ],
+    };
+  });
+
+  /**
+   * Read resource content
+   */
+  server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+    const { uri } = request.params;
+
+    if (uri === 'status://n8n') {
+      try {
+        // Check connection by fetching workflow count
+        const workflows = await client.listWorkflows();
+        const activeWorkflows = workflows.filter((w) => w.active).length;
+
+        return {
+          contents: [
+            {
+              uri,
+              mimeType: 'application/json',
+              text: JSON.stringify(
+                {
+                  status: 'connected',
+                  api_url: process.env.N8N_API_URL,
+                  total_workflows: workflows.length,
+                  active_workflows: activeWorkflows,
+                  timestamp: new Date().toISOString(),
+                },
+                null,
+                2
+              ),
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          contents: [
+            {
+              uri,
+              mimeType: 'application/json',
+              text: JSON.stringify(
+                {
+                  status: 'error',
+                  error: error.message,
+                  api_url: process.env.N8N_API_URL,
+                  timestamp: new Date().toISOString(),
+                },
+                null,
+                2
+              ),
+            },
+          ],
+        };
+      }
+    }
+
+    throw new McpError(ErrorCode.InvalidRequest, `Unknown resource: ${uri}`);
+  });
 
   /**
    * List available tools

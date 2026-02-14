@@ -21,8 +21,8 @@ const requiredEnvVars = ['N8N_API_URL', 'N8N_API_KEY'];
 const missing = requiredEnvVars.filter((key) => !process.env[key]);
 
 if (missing.length > 0) {
-  console.error(`❌ Missing required environment variables: ${missing.join(', ')}`);
-  console.error('Please configure your .env file with the required values.');
+  console.error(`Missing required environment variables: ${missing.join(', ')}`);
+  console.error('\nPlease configure your .env file with the required values.');
   console.error('\nRequired:');
   console.error('  N8N_API_URL    - Your n8n instance URL (e.g., https://n8n.example.com)');
   console.error('  N8N_API_KEY    - Your n8n API key from Settings → API');

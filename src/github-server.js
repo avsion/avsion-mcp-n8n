@@ -10,6 +10,8 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
@@ -24,6 +26,7 @@ const server = new Server(
   {
     capabilities: {
       tools: {},
+      resources: {},
     },
   }
 );
@@ -49,6 +52,71 @@ async function githubRequest(endpoint, options = {}) {
 
   return response.json();
 }
+
+// Register available resources
+server.setRequestHandler(ListResourcesRequestSchema, async () => {
+  return {
+    resources: [
+      {
+        uri: 'status://github',
+        name: 'GitHub Connection Status',
+        description: 'Current connection status to GitHub API',
+        mimeType: 'application/json',
+      },
+    ],
+  };
+});
+
+// Read resource content
+server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+  const { uri } = request.params;
+
+  if (uri === 'status://github') {
+    try {
+      const user = await githubRequest('/user');
+      return {
+        contents: [
+          {
+            uri,
+            mimeType: 'application/json',
+            text: JSON.stringify(
+              {
+                status: 'connected',
+                authenticated_as: user.login,
+                user_name: user.name,
+                api_base: GITHUB_API_BASE,
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        contents: [
+          {
+            uri,
+            mimeType: 'application/json',
+            text: JSON.stringify(
+              {
+                status: 'error',
+                error: error.message,
+                api_base: GITHUB_API_BASE,
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+  }
+
+  throw new Error(`Unknown resource: ${uri}`);
+});
 
 // Register available tools
 server.setRequestHandler(ListToolsRequestSchema, async () => {

@@ -154,3 +154,32 @@ mcp.json
 .vscode/mcp.json
 !mcp.json.example
 !.vscode/mcp.json.example
+
+# --- GLOBAL SECURITY & BACKUPS (Crucial based on your screenshot) ---
+# These extensions often contain secrets created by auto-save or backup tools
+*.bak
+*.bk
+*.backup
+*.swp
+*.old
+*.tmp
+
+# --- SPECIFIC API KEY FILES ---
+# Explicitly ignore these regardless of where they are
+settings.local.json
+env.json
+mcp.json
+
+# --- CLAUDE & VSCODE REFINEMENTS ---
+# Your current file ignores these entire folders.
+# This is SAFE, but if you ever want to share settings, use this specific ignore list instead:
+
+# .claude/
+# !.claude/settings.json       # Uncomment to share non-sensitive settings
+# .claude/settings.local.json  # ALWAYS ignore this
+# .claude/env.json             # ALWAYS ignore this
+
+# .vscode/
+# !.vscode/extensions.json     # Uncomment to share recommended extensions
+# !.vscode/settings.json       # Uncomment to share editor formatting
+# .vscode/mcp.json             # ALWAYS ignore this
