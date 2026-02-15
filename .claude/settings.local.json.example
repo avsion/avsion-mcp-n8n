@@ -9,7 +9,11 @@
   },
   "mcpServers": {
     "n8n": {
+      "command": "node",
+      "args": ["src/index.js"],
+      "cwd": "/Users/yariv/Documents/agentic_workflows/projects/AI_Personal_Assistant_Core",
       "env": {
+        "N8N_API_URL": "http://localhost:5678",
         "N8N_API_KEY": "your-n8n-api-key-here"
       }
     },
