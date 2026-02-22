@@ -1,3 +1,6 @@
+# Staging/review files
+staging-workflow-review*.md
+
 # Dependencies
 node_modules/
 
