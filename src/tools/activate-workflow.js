@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { sanitizeField } from '../utils/sanitize.js';
 
 export const activateWorkflowTool = {
   name: 'n8n_activate_workflow',
@@ -14,7 +15,7 @@ export const activateWorkflowTool = {
       let info = '';
       try {
         const workflow = await client.getWorkflow(workflowId);
-        info = ` ("${workflow.name}", currently active: ${workflow.active})`;
+        info = ` ("${sanitizeField(workflow.name)}", currently active: ${workflow.active})`;
       } catch { /* ignore lookup failure */ }
       return {
         content: [{ type: 'text', text:
@@ -24,7 +25,7 @@ export const activateWorkflowTool = {
     }
     const result = await client.activateWorkflow(workflowId, active);
     return {
-      content: [{ type: 'text', text: `✅ Workflow "${result.name}" (${workflowId}) is now ${active ? 'active' : 'inactive'}.` }],
+      content: [{ type: 'text', text: `✅ Workflow "${sanitizeField(result.name)}" (${workflowId}) is now ${active ? 'active' : 'inactive'}.` }],
     };
   },
 };

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { sanitizeField } from '../utils/sanitize.js';
 
 export const deleteWorkflowTool = {
   name: 'n8n_delete_workflow',
@@ -12,7 +13,7 @@ export const deleteWorkflowTool = {
       let info = '';
       try {
         const workflow = await client.getWorkflow(workflowId);
-        info = ` ("${workflow.name}", active: ${workflow.active})`;
+        info = ` ("${sanitizeField(workflow.name)}", active: ${workflow.active})`;
       } catch { /* ignore lookup failure */ }
       return {
         content: [{ type: 'text', text:

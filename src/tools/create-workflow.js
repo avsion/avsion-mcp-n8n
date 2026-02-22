@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { sanitizeField } from '../utils/sanitize.js';
 
 export const createWorkflowTool = {
   name: 'n8n_create_workflow',
@@ -23,7 +24,7 @@ export const createWorkflowTool = {
     if (connections) data.connections = connections;
     const result = await client.createWorkflow(data);
     return {
-      content: [{ type: 'text', text: `✅ Created workflow "${result.name}" (ID: ${result.id})` }],
+      content: [{ type: 'text', text: `✅ Created workflow "${sanitizeField(result.name)}" (ID: ${sanitizeField(result.id)})` }],
     };
   },
 };

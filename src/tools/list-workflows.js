@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { sanitizeField, UNTRUSTED_HEADER } from '../utils/sanitize.js';
 
 export const listWorkflowsTool = {
   name: 'n8n_list_workflows',
@@ -11,10 +12,10 @@ export const listWorkflowsTool = {
     const result = await client.listWorkflows({ active, limit });
     const workflows = result.data || result;
     const summary = Array.isArray(workflows)
-      ? workflows.map(w => `• [${w.id}] ${w.name} (active: ${w.active})`).join('\n')
+      ? workflows.map(w => `• [${sanitizeField(w.id)}] ${sanitizeField(w.name)} (active: ${w.active})`).join('\n')
       : JSON.stringify(workflows, null, 2);
     return {
-      content: [{ type: 'text', text: summary || 'No workflows found.' }],
+      content: [{ type: 'text', text: UNTRUSTED_HEADER + (summary || 'No workflows found.') }],
     };
   },
 };

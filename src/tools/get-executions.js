@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { sanitizeField, UNTRUSTED_HEADER } from '../utils/sanitize.js';
 
 export const getExecutionsTool = {
   name: 'n8n_get_executions',
@@ -12,10 +13,12 @@ export const getExecutionsTool = {
     const result = await client.getExecutions({ workflowId, status, limit });
     const executions = result.data || result;
     const summary = Array.isArray(executions)
-      ? executions.map(e => `• [${e.id}] workflow:${e.workflowId} status:${e.status} ${e.startedAt || ''}`).join('\n')
+      ? executions.map(e =>
+          `• [${sanitizeField(e.id)}] workflow:${sanitizeField(e.workflowId)} status:${sanitizeField(e.status)} ${sanitizeField(e.startedAt)}`
+        ).join('\n')
       : JSON.stringify(executions, null, 2);
     return {
-      content: [{ type: 'text', text: summary || 'No executions found.' }],
+      content: [{ type: 'text', text: UNTRUSTED_HEADER + (summary || 'No executions found.') }],
     };
   },
 };

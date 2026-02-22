@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { UNTRUSTED_HEADER } from '../utils/sanitize.js';
 
 export const getWorkflowTool = {
   name: 'n8n_get_workflow',
@@ -9,7 +10,12 @@ export const getWorkflowTool = {
   handler: async ({ workflowId }, client) => {
     const workflow = await client.getWorkflow(workflowId);
     return {
-      content: [{ type: 'text', text: JSON.stringify(workflow, null, 2) }],
+      content: [{ type: 'text', text:
+        UNTRUSTED_HEADER +
+        '[START WORKFLOW DATA]\n' +
+        JSON.stringify(workflow, null, 2) +
+        '\n[END WORKFLOW DATA]'
+      }],
     };
   },
 };

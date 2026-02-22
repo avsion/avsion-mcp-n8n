@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { sanitizeField, UNTRUSTED_HEADER } from '../utils/sanitize.js';
 
 export const analyzeWorkflowTool = {
   name: 'n8n_analyze_workflow',
@@ -27,7 +28,7 @@ export const analyzeWorkflowTool = {
     for (const node of httpNodes) {
       const retryEnabled = node.parameters?.options?.retry || node.retryOnFail;
       if (!retryEnabled) {
-        suggestions.push(`🔄 HTTP node "${node.name}" has no retry configuration. Consider enabling retries for resilience.`);
+        suggestions.push(`🔄 HTTP node "${sanitizeField(node.name)}" has no retry configuration. Consider enabling retries for resilience.`);
       }
     }
 
@@ -46,9 +47,9 @@ export const analyzeWorkflowTool = {
     }
 
     const text = suggestions.length > 0
-      ? `Analysis for workflow "${workflow.name}" (${workflowId}):\n\n${suggestions.join('\n')}`
-      : `✅ Workflow "${workflow.name}" (${workflowId}) looks well-optimized. No suggestions.`;
+      ? `Analysis for workflow "${sanitizeField(workflow.name)}" (${workflowId}):\n\n${suggestions.join('\n')}`
+      : `✅ Workflow "${sanitizeField(workflow.name)}" (${workflowId}) looks well-optimized. No suggestions.`;
 
-    return { content: [{ type: 'text', text }] };
+    return { content: [{ type: 'text', text: UNTRUSTED_HEADER + text }] };
   },
 };

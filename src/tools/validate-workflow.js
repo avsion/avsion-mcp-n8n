@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { sanitizeField, UNTRUSTED_HEADER } from '../utils/sanitize.js';
 
 export const validateWorkflowTool = {
   name: 'n8n_validate_workflow',
@@ -41,13 +42,13 @@ export const validateWorkflowTool = {
     }
     const disconnected = nodes.filter(n => !connectedNodeNames.has(n.name) && nodes.length > 1);
     if (disconnected.length > 0) {
-      issues.push(`⚠️ Disconnected nodes: ${disconnected.map(n => n.name).join(', ')}`);
+      issues.push(`⚠️ Disconnected nodes: ${disconnected.map(n => sanitizeField(n.name)).join(', ')}`);
     }
 
     // Check for disabled nodes
     const disabled = nodes.filter(n => n.disabled);
     if (disabled.length > 0) {
-      issues.push(`ℹ️ Disabled nodes: ${disabled.map(n => n.name).join(', ')}`);
+      issues.push(`ℹ️ Disabled nodes: ${disabled.map(n => sanitizeField(n.name)).join(', ')}`);
     }
 
     // Check for nodes without credentials where type suggests they need them
@@ -56,14 +57,14 @@ export const validateWorkflowTool = {
       const typeLower = (node.type || '').toLowerCase();
       const needsCreds = credentialTypes.some(ct => typeLower.includes(ct));
       if (needsCreds && !node.credentials && !node.disabled) {
-        issues.push(`⚠️ Node "${node.name}" (${node.type}) may need credentials but none are configured.`);
+        issues.push(`⚠️ Node "${sanitizeField(node.name)}" (${sanitizeField(node.type)}) may need credentials but none are configured.`);
       }
     }
 
     const text = issues.length > 0
-      ? `Validation for workflow "${workflow.name}" (${workflowId}):\n\n${issues.join('\n')}`
-      : `✅ Workflow "${workflow.name}" (${workflowId}) looks good. No issues found.`;
+      ? `Validation for workflow "${sanitizeField(workflow.name)}" (${workflowId}):\n\n${issues.join('\n')}`
+      : `✅ Workflow "${sanitizeField(workflow.name)}" (${workflowId}) looks good. No issues found.`;
 
-    return { content: [{ type: 'text', text }] };
+    return { content: [{ type: 'text', text: UNTRUSTED_HEADER + text }] };
   },
 };
